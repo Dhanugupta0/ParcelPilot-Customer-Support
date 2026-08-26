@@ -170,3 +170,49 @@ def test_customer_phrasing_keeps_the_substance_and_drops_the_code():
     plain = text.plainly(warn)
     assert "20 minutes" in plain
     assert "KI-211" not in plain and "Product Operations Guide" not in plain
+
+
+def test_a_figure_the_engine_stated_in_its_rule_chain_is_not_called_invented():
+    """The check reported a fabrication on almost every correct answer.
+
+    `30-minute` in a rule chain and `"overdue_minutes": 120` in a facts dict are
+    both figures a tool produced, but neither has a unit word following the
+    number, so neither registered as allowed. The answers quoting them were then
+    flagged in the interface as figures no tool produced — which is the one
+    warning that has to mean something when it appears.
+    """
+    used = [{"tool": "calculate",
+             "result": tools.call("calculate", {"kind": "sla",
+                                                "ticket_id": "TKT-505"}, AGENT)}]
+    assert verify.check(
+        "The 30 minute target was missed; it is 120 minutes overdue.", used) == []
+    # The narrow no-break space the model writes figures with.
+    assert verify.check("Overdue by 120 minutes.", used) == []
+    # 2.0 h is how the engine phrases the same overrun in its headline.
+    assert verify.check("It is 2.0 h past the target.", used) == []
+    # And a figure that really is invented still gets caught.
+    assert verify.check("It is 47 minutes overdue.", used) == ["47 minutes"]
+
+
+def test_a_search_returns_the_passage_that_answers_the_question():
+    """Authority was being applied as a global sort, so every contract clause in
+    the pack outranked the product documentation on every query. An internal
+    question with no account named returned five agreement clauses about service
+    credits and never the section that answers it — and the model, given nothing
+    useful, searched again until the step budget ran out.
+    """
+    r = tools.call("search_policies", {"query": "bulk upload limit"}, AGENT)
+    cites = [p["citation"] for p in r["passages"]]
+    assert any("Product Operations Guide" in c for c in cites), cites
+    assert not any("Agreement" in c for c in cites), \
+        "a contract clause that is not about the question must not crowd it out"
+
+
+def test_authority_still_wins_between_passages_that_both_answer():
+    """The rule Support Policy v3 §1 actually states, and the one worth keeping:
+    where a signed agreement and the SOP both speak to the question, the
+    agreement is cited first."""
+    r = tools.call("search_policies", {"query": "cancellation fee window"}, LUMEN)
+    cites = [p["citation"] for p in r["passages"]]
+    assert "LumenWorks" in cites[0], cites
+    assert any("SOP" in c for c in cites), "the SOP is still offered, just second"

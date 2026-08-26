@@ -176,8 +176,8 @@ async function openChat(subject) {
     chips('cust', ['What does my plan include?', 'How do cancellations work?',
                    'How quickly do you respond to urgent issues?']);
   }
-  activityReset('When you ask something, the steps I take to answer it will '
-                + 'appear here.');
+  activityReset('cust', 'When you ask something, the steps I take to answer it '
+                + 'will appear here.');
   $('#custHome').hidden = false;
   pane('s-cust','cust-chat'); $('#custIn').focus();
 }
@@ -187,7 +187,8 @@ async function resumeChat(id) {
   $('#custMsgs').innerHTML = '';
   d.turns.forEach(t => { say('cust','you', t.question); botBubble('cust', t.answer); });
   chips('cust', []);
-  activityReset('Continuing an earlier conversation. New steps will appear here.');
+  activityReset('cust',
+    'Continuing an earlier conversation. New steps will appear here.');
   $('#custHome').hidden = false;
   pane('s-cust','cust-chat'); $('#custIn').focus();
 }
@@ -224,6 +225,10 @@ async function ask(scope) {
   if (!q) return;
   BUSY = true; input.value = ''; chips(scope, []);
   say(scope, 'you', q);
+  // The agent panel shows THIS turn. The chips in the transcript keep the
+  // history; a panel that accumulates every turn stops being readable at the
+  // point an agent most needs to read it.
+  if (scope === 'staff') { activityReset('staff'); activityAsked(q); }
 
   const wrap = el('div','m bot');
   const steps = el('div','steps');           // live tool trace
@@ -252,18 +257,21 @@ async function ask(scope) {
 
         if (ev.type === 'tool_start') {
           steps.appendChild(stepChip(ev));
-          if (scope === 'cust') activityStart(ev);
+          activityStart(scope, ev);
         } else if (ev.type === 'tool_end') {
           markDone(ev);
-          if (scope === 'cust') activityDone(ev);
+          activityDone(scope, ev);
           if (ev.result) tools.push(ev);
         } else if (ev.type === 'waiting') {
           body.innerHTML = `<span class="thinking"><i></i><i></i><i></i></span>`
             + ` <span class="wait">rate limited upstream — waiting ${ev.seconds}s</span>`;
+          activityNote(scope, `rate limited upstream — waiting ${ev.seconds}s`);
         } else if (ev.type === 'answer') {
           body.innerHTML = md(ev.text);
         } else if (ev.type === 'proposals') {
           proposals = ev.items;
+        } else if (ev.type === 'done') {
+          activityFoot(scope, ev);
         } else if (ev.type === 'verified') {
           if (ev.unverified?.length)
             wrap.appendChild(el('div','badbox',
@@ -271,6 +279,7 @@ async function ask(scope) {
               + `Trust the tool trace, not the sentence.`));
         } else if (ev.type === 'error') {
           body.appendChild(el('div','badbox', ev.message));
+          activityNote(scope, ev.message, true);
         }
       }
     }
@@ -283,34 +292,99 @@ async function ask(scope) {
   }
 }
 
-/* The customer's side panel. Same events as the agent trace, but named in
-   plain language and without any result payload — a customer should be able to
-   see that the answer was LOOKED UP rather than guessed, which is the thing
-   that earns trust, without being shown our internals. */
-function activityStart(ev) {
-  const box = $('#custActivity');
+/* The side panel, for both portals from one set of events.
+
+   A customer sees plain language and no result payload — enough to see that the
+   answer was LOOKED UP rather than guessed, which is the thing that earns
+   trust, without being handed our internals. An agent sees the same sequence at
+   full resolution: the tool name, its category, the arguments, and what came
+   back. The server has already decided which of the two it is allowed to send;
+   this only renders what arrived. */
+const ACT = {cust: '#custActivity', staff: '#staffActivity'};
+const actBox = scope => $(ACT[scope]);
+
+function activityStart(scope, ev) {
+  const box = actBox(scope);
+  if (!box) return;
   if (box.querySelector('.aidle')) box.innerHTML = '';
   const row = el('div','astep');
-  row.id = `act-${ev.call_id}`;
+  row.id = `act-${scope}-${ev.call_id}`;
   row.appendChild(el('span','dot'));
-  const d = el('div');
-  d.appendChild(document.createTextNode(ev.label || 'Working'));
-  d.appendChild(el('span','when','checking…'));
+  const d = el('div','abody');
+
+  if (scope === 'staff') {
+    d.appendChild(el('code','tname', ev.tool || 'tool'));
+    if (ev.category) d.appendChild(el('span','acat', ev.category));
+    const a = argLine(ev.args);
+    if (a) d.appendChild(el('div','aargs', a));
+  } else {
+    d.appendChild(document.createTextNode(ev.label || 'Working'));
+  }
+  d.appendChild(el('span','when', scope === 'staff' ? 'running…' : 'checking…'));
   row.appendChild(d);
   box.appendChild(row);
   box.scrollTop = box.scrollHeight;
 }
-function activityDone(ev) {
-  const row = document.getElementById(`act-${ev.call_id}`);
+
+function activityDone(scope, ev) {
+  const row = document.getElementById(`act-${scope}-${ev.call_id}`);
   if (!row) return;
-  row.classList.add('done');
+  // The same test the inline chip uses, so the panel and the transcript never
+  // disagree about whether a step succeeded.
+  const bad = /denied|not visible|error/i.test(ev.summary || '');
+  row.classList.add(bad ? 'bad' : 'done');
   const w = row.querySelector('.when');
-  if (w) w.textContent = 'done';
+  if (w) w.textContent = (scope === 'staff' && ev.summary) ? ev.summary : 'done';
+  actBox(scope).scrollTop = actBox(scope).scrollHeight;
 }
-function activityReset(msg) {
-  const box = $('#custActivity');
+
+function activityNote(scope, msg, bad) {
+  const box = actBox(scope);
+  if (!box || scope !== 'staff') return;
+  box.appendChild(el('div', 'anote' + (bad ? ' bad' : ''), msg));
+  box.scrollTop = box.scrollHeight;
+}
+
+/* The question the workflow belongs to, so a panel read on its own still says
+   what it was answering. */
+function activityAsked(q) {
+  const box = actBox('staff');
+  if (!box) return;
   box.innerHTML = '';
-  box.appendChild(el('div','aidle', msg));
+  box.appendChild(el('div','aq', q));
+}
+
+function activityFoot(scope, ev) {
+  const foot = $('#staffWorkFoot');
+  if (!foot || scope !== 'staff') return;
+  foot.innerHTML = '';
+  const n = (ev.tools || []).length;
+  const bits = [`${n} tool call${n === 1 ? '' : 's'}`, `${ev.steps} model step(s)`];
+  if (ev.truncated) bits.push('step budget reached');
+  if (ev.failed) bits.push('model unreachable');
+  foot.appendChild(el('p', null, bits.join(' · ')));
+  // Which categories the answer actually rests on. "Deterministic calculation"
+  // present means a figure in the prose came from the engine.
+  const cats = [...new Set((ev.tools || []).map(t => t.category).filter(Boolean))];
+  if (cats.length) {
+    const row = el('div','acats');
+    cats.forEach(c => row.appendChild(el('span','acat', c)));
+    foot.appendChild(row);
+  }
+}
+
+function argLine(args) {
+  return Object.entries(args || {})
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .map(([k, v]) => `${k}=${v}`).join('  ');
+}
+
+function activityReset(scope, msg) {
+  const box = actBox(scope);
+  if (!box) return;
+  box.innerHTML = '';
+  if (msg) box.appendChild(el('div','aidle', msg));
+  if (scope === 'staff') $('#staffWorkFoot').innerHTML = '';
 }
 
 /* Requirement 6 of the brief: the interface should show which tool is being
@@ -460,6 +534,8 @@ function switchView(name) {
   if (name === 'board') loadBoard();
   if (name === 'review') loadChats();
   if (name === 'ask' && !$('#staffMsgs').children.length) {
+    activityReset('staff', 'Ask something and every tool the model chooses will '
+                  + 'appear here as it runs — name, arguments and result.');
     say('staff','note','Every number below is computed before the model writes a word.');
     chips('staff', ['Can Northstar cancel ORD-1001 without a fee?',
                     'Is TKT-505 within its SLA?',

@@ -122,6 +122,13 @@ class Outcome(str, Enum):
     NOT_ALLOWED = "NOT_ALLOWED"
     ELIGIBLE = "ELIGIBLE"
     NOT_ELIGIBLE = "NOT_ELIGIBLE"
+    # An SLA decision is not an eligibility question, and reusing the credit
+    # vocabulary for it read backwards where it mattered most: a breached
+    # target came back as "ELIGIBLE" and one still within target as
+    # "NOT_ELIGIBLE" -- in the tool trace, in the review transcript, and in the
+    # JSON the model reads before writing the sentence.
+    BREACHED = "BREACHED"
+    WITHIN_TARGET = "WITHIN_TARGET"
     INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
 
 
@@ -606,7 +613,7 @@ def sla(ticket_id: str, now: datetime | None = None) -> Decision:
             "This agreement excludes weekend cover, so the response clock is "
             "paused until the next business day.")
 
-    return Decision("sla", Outcome.ELIGIBLE if breached else Outcome.NOT_ELIGIBLE,
+    return Decision("sla", Outcome.BREACHED if breached else Outcome.WITHIN_TARGET,
                     headline, rule_chain=chain, facts=facts, caveats=caveats,
                     authority_used=authority)
 

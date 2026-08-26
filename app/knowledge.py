@@ -34,6 +34,14 @@ from app import config
 JINA_API_URL = "https://api.jina.ai/v1/embeddings"
 DIM = 768  # jina-embeddings-v2-base-en output dimension
 
+# How far below the best match a passage may score and still count as being
+# about the question. Cosine, so it is a distance on this model's scale --
+# jina-embeddings-v2 puts a genuine match around 0.80 and unrelated policy prose
+# around 0.65, and the pack is small enough that a wider band lets an unrelated
+# section in. Retune this if the embedding model changes; nothing else here
+# depends on the absolute value of a score.
+RELEVANT_BAND = 0.10
+
 # Source precedence, straight from Support Policy v3 §1:
 #   signed customer agreement > current support policy > current product docs
 #   > historical tickets and notes (context only, may be wrong)
@@ -216,7 +224,7 @@ class Index:
                include_deprecated: bool = False, limit: int = 6,
                all_tenants: bool = False
                ) -> tuple[list[Chunk], list[dict]]:
-        """Return (passages, excluded) ranked by authority then similarity.
+        """Return (passages, excluded), relevance-gated then authority-ordered.
 
         `excluded` is not a debugging aid -- it is part of the answer. A user
         asking about cancellation fees whose question matched the DEPRECATED
@@ -224,13 +232,14 @@ class Index:
         """
         q = _embed([query])[0]
         scores = self.matrix @ q
+        best = float(scores.max()) if len(scores) else 0.0
 
         kept: list[Chunk] = []
         excluded: list[dict] = []
         for i, ch in enumerate(self.chunks):
             c = Chunk(**{**ch.__dict__, "score": float(scores[i])})
             if c.status == "DEPRECATED" and not include_deprecated:
-                if c.score > 0.25:
+                if c.score >= best - RELEVANT_BAND:
                     excluded.append({"citation": c.citation,
                                      "reason": "superseded by a current policy",
                                      "score": round(c.score, 3)})
@@ -250,12 +259,26 @@ class Index:
                 continue
             kept.append(c)
 
-        # Authority first, similarity second. The signed agreement outranks the
-        # SOP even when the SOP is the closer textual match, because that is
-        # what Support Policy v3 §1 says must happen.
-        kept.sort(key=lambda c: (c.authority, -c.score))
-        strong = [c for c in kept if c.score > 0.15][:limit]
-        return (strong or kept[:limit]), excluded
+        # RELEVANCE GATES, AUTHORITY ORDERS -- and in that order.
+        #
+        # Support Policy v3 §1 decides which of two passages wins when both
+        # could answer the question. It was being applied as a global sort,
+        # which is a different and much worse rule: every contract clause in the
+        # pack outranked the Product Operations Guide on every query, so an
+        # internal question with no account named ("what is the bulk upload
+        # limit?") returned five agreement clauses about service credits and
+        # never the section that answers it. The model would then search again,
+        # get the same five, and burn the whole step budget without an answer.
+        #
+        # So: take the passages that are actually about the question first, then
+        # let authority order them. Inside that band a signed agreement still
+        # outranks the SOP even when the SOP is the closer textual match --
+        # which is the part §1 actually requires.
+        kept.sort(key=lambda c: -c.score)
+        band = [c for c in kept if c.score >= best - RELEVANT_BAND]
+        pool = band[:limit * 3] or kept[:limit]
+        pool.sort(key=lambda c: (c.authority, -c.score))
+        return pool[:limit], excluded
 
 
 _index: Index | None = None

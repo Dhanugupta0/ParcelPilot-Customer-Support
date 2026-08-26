@@ -113,8 +113,8 @@
     <div id="credits"></div>
   </div></div>
 
-  <div class="pane" id="v-ask">
-    <div class="chat wide">
+  <div class="pane split-chat" id="v-ask">
+    <div class="chat">
       <div class="msgs" id="staffMsgs"></div>
       <div class="chips" id="staffChips"></div>
       <form class="composer" id="staffForm">
@@ -122,6 +122,20 @@
         <button>Send</button>
       </form>
     </div>
+
+    <!-- The same events the customer panel renders, at agent resolution: the
+         real tool name, its category, the arguments it was called with and what
+         it returned. This is the control flow, not a progress bar — an agent
+         defending an answer to a customer needs to see which tool produced
+         which figure, and that a fee came from `calculate` and not from prose. -->
+    <aside class="activity workflow">
+      <div class="ah">
+        <b>Agent workflow</b>
+        <span>every tool call this turn, in the order the model chose it</span>
+      </div>
+      <div id="staffActivity" class="alist"></div>
+      <div class="ahelp" id="staffWorkFoot"></div>
+    </aside>
   </div>
 
   <div class="pane" id="v-review"><div class="col wide">
@@ -139,9 +153,10 @@
   </div></div>
 
   <div class="pane" id="v-policy"><div class="col wide">
-    <p class="lede">The policy vector store, searchable directly. Results are ordered by
-      authority first — a signed agreement outranks the SOP even when the SOP is the
-      closer textual match — and anything filtered out is listed with the reason.</p>
+    <p class="lede">The policy vector store, searchable directly. Passages that are
+      about the question are selected first, then ordered by authority — a signed
+      agreement outranks the SOP even when the SOP is the closer textual match — and
+      anything filtered out is listed with the reason.</p>
     <form class="composer flat" id="polForm">
       <input id="polIn" placeholder="e.g. what happens if a pickup is missed?"/>
       <button>Search</button>

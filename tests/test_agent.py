@@ -196,3 +196,74 @@ def test_the_picked_subject_is_passed_as_a_default_not_a_fact(monkeypatch):
     sent = script.seen[0]["messages"][-1]["content"]
     assert "TKT-502" in sent
     assert "Look it up before stating anything" in sent
+
+
+# ==========================================================================
+# The loop must not spend its budget repeating itself
+# ==========================================================================
+
+def test_a_repeated_tool_call_is_served_from_the_first_result(monkeypatch):
+    """The failure this guards: six identical `search_policies` calls, the whole
+    step budget spent, and the turn ending with no answer at all."""
+    from app import tools as tools_mod
+
+    calls: list[str] = []
+    real = tools_mod.call
+
+    def counting(name, args, user):
+        calls.append(name)
+        return real(name, args, user)
+
+    monkeypatch.setattr(tools_mod, "call", counting)
+
+    events, _ = _run(
+        monkeypatch, AGENT, "what is the bulk upload limit?",
+        _tool_call("search_policies", query="bulk upload limit"),
+        _tool_call("search_policies", query="bulk upload limit"),
+        _Msg(content="5,000 rows per CSV."))
+
+    assert calls == ["search_policies"], "the second call must not re-run the tool"
+
+    ends = [e for e in events if e["type"] == "tool_end"]
+    assert len(ends) == 2, "the repeat is still shown in the trace"
+    assert "repeated_call" not in ends[0]["result"]
+    assert "repeated_call" in ends[1]["result"], \
+        "the model has to be told it is repeating itself in order to stop"
+
+
+def test_the_same_tool_with_different_arguments_is_not_a_repeat(monkeypatch):
+    from app import tools as tools_mod
+
+    calls: list[dict] = []
+    real = tools_mod.call
+
+    def counting(name, args, user):
+        calls.append(args)
+        return real(name, args, user)
+
+    monkeypatch.setattr(tools_mod, "call", counting)
+
+    _run(monkeypatch, AGENT, "compare them",
+         _tool_call("lookup_order", order_id="ORD-1001"),
+         _tool_call("lookup_order", order_id="ORD-1002"),
+         _Msg(content="Here they are."))
+
+    assert len(calls) == 2, "a different order id is a different question"
+
+
+def test_the_final_step_is_spent_writing_rather_than_searching(monkeypatch):
+    """Leaving the turn with no answer is worse than answering from what is
+    already gathered, so the last step is not offered the tools."""
+    events, script = _run(
+        monkeypatch, AGENT, "go",
+        *[_tool_call("lookup_order", order_id=f"ORD-100{i}")
+          for i in range(agent.MAX_STEPS - 1)],
+        _Msg(content="Here is what I found."))
+
+    choices = [kw.get("tool_choice") for kw in script.seen]
+    assert choices[:-1] == ["auto"] * (agent.MAX_STEPS - 1)
+    assert choices[-1] == "none"
+
+    answer = next(e for e in events if e["type"] == "answer")
+    assert answer["text"] == "Here is what I found."
+    assert not next(e for e in events if e["type"] == "done").get("truncated")

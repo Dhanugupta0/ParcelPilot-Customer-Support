@@ -81,10 +81,19 @@ SCHEMAS: list[dict] = [
 
     {"type": "function", "function": {
         "name": "list_tickets",
-        "description": "List tickets, optionally only open ones, for an account.",
+        "description": (
+            "List tickets across EVERY account you can see. Both arguments are "
+            "optional: omit `account_id` to list all accounts at once — do that "
+            "rather than asking the user which account they mean. Pass "
+            "only_open=true for the open queue. Each ticket comes back with its "
+            "triaged severity; to find out whether one has breached its SLA, "
+            "call `calculate(kind='sla')` on it."),
         "parameters": {"type": "object", "properties": {
-            "account_id": {"type": ["string", "null"]},
-            "only_open": {"type": ["boolean", "null"]}}, "required": []}}},
+            "account_id": {"type": ["string", "null"],
+                           "description": "Omit to list every account."},
+            "only_open": {"type": ["boolean", "null"],
+                          "description": "true for open tickets only."}},
+            "required": []}}},
 
     {"type": "function", "function": {
         "name": "calculate",

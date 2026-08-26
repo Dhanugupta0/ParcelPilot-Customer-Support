@@ -27,7 +27,8 @@ from app import config, text, tools
 from app.access import User
 from app.llm import client, daily_quota_spent, retry_delay
 
-MAX_STEPS = 6
+# `.env` may raise or lower this; it was being declared there and ignored.
+MAX_STEPS = config.MAX_AGENT_STEPS
 
 INTERNAL_PROMPT = """You are ParcelPilot's support assistant, working with an
 authorised {role}. Reference time is {now} — treat it as "now" for every
@@ -135,8 +136,13 @@ def run(user: User, question: str, history: list[dict] | None = None,
     schemas = tools.available(user)
     used: list[dict] = []
     proposals: list[dict] = []
+    seen: dict[str, dict] = {}          # a tool call it has already made
 
     for step in range(MAX_STEPS):
+        # The last step is for writing. Offering tools on it invites the model
+        # to spend the budget searching and leave the turn with no answer at
+        # all, which is worse than an answer drawn from what it already has.
+        last_step = step == MAX_STEPS - 1
         resp = None
         last: Exception | None = None
         # A loop of several calls with large tool schemas hits the per-minute
@@ -146,8 +152,9 @@ def run(user: User, question: str, history: list[dict] | None = None,
             try:
                 resp = client().chat.completions.create(
                     model=config.GROQ_MODEL, messages=messages,
-                    tools=schemas, tool_choice="auto", temperature=0.1,
-                    max_tokens=900,
+                    tools=schemas,
+                    tool_choice="none" if last_step else "auto",
+                    temperature=0.1, max_tokens=900,
                     extra_body={"reasoning_format": "hidden",
                                 "reasoning_effort": config.GROQ_REASONING_EFFORT})
                 break
@@ -195,7 +202,23 @@ def run(user: User, question: str, history: list[dict] | None = None,
                          category=tools.CATEGORY.get(name, "Tool"),
                          friendly=tools.FRIENDLY.get(name, "Working"))
 
-            result = tools.call(name, args, user)
+            # A tool called twice with the same arguments returns the same
+            # thing, so the second call buys nothing and costs a step. The
+            # model used to sit in exactly this loop -- six identical
+            # `search_policies` calls, budget gone, no answer -- so the repeat
+            # is served from the first result and named as a repeat, which is
+            # the fact it needs in order to stop.
+            key = f"{name}({json.dumps(args, sort_keys=True, default=str)})"
+            if key in seen:
+                result = dict(seen[key])
+                result["repeated_call"] = (
+                    f"You already called {key} this turn and this is the same "
+                    f"result. Calling it again will not return anything new. "
+                    f"Answer from what you have, or try a different tool or a "
+                    f"materially different query.")
+            else:
+                result = tools.call(name, args, user)
+                seen[key] = result
             summary = tools.summarise(name, result)
             used.append({"tool": name, "args": args, "summary": summary,
                          "category": tools.CATEGORY.get(name, "Tool"),
@@ -204,7 +227,9 @@ def run(user: User, question: str, history: list[dict] | None = None,
                 proposals.append(result)
 
             yield _event("tool_end", tool=name, call_id=c.id, summary=summary,
-                         category=tools.CATEGORY.get(name, "Tool"), result=result)
+                         category=tools.CATEGORY.get(name, "Tool"),
+                         friendly=tools.FRIENDLY.get(name, "Working"),
+                         result=result)
             messages.append({"role": "tool", "tool_call_id": c.id, "name": name,
                              "content": json.dumps(result, default=str)[:9000]})
 

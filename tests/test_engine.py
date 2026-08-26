@@ -235,3 +235,17 @@ def test_unknown_records_fail_closed():
     for fn, ref in ((E.cancellation, "ORD-9999"), (E.service_credit, "ORD-9999"),
                     (E.sla, "TKT-9999")):
         assert fn(ref).outcome is E.Outcome.INSUFFICIENT_DATA
+
+
+def test_an_sla_decision_says_breached_rather_than_eligible():
+    """`ELIGIBLE` is the service-credit vocabulary. On an SLA it read backwards:
+    a breached target came back as ELIGIBLE and one still within target as
+    NOT_ELIGIBLE — in the tool trace, in the review transcript, and in the JSON
+    the model reads before writing the sentence."""
+    breached = E.sla("TKT-505")
+    assert breached.facts["breached"] is True
+    assert breached.outcome is E.Outcome.BREACHED
+
+    within = E.sla("TKT-502")
+    assert within.facts["breached"] is False
+    assert within.outcome is E.Outcome.WITHIN_TARGET

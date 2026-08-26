@@ -47,6 +47,13 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 # reply, where it would otherwise arrive as prose.
 GROQ_REASONING_EFFORT = os.getenv("GROQ_REASONING_EFFORT", "medium")
 
+# How many tool rounds the agent may take in one turn. The last one is spent
+# writing the answer, so this is "rounds of investigation plus one".
+try:
+    MAX_AGENT_STEPS = max(2, int(os.getenv("MAX_AGENT_STEPS", "6")))
+except ValueError:
+    MAX_AGENT_STEPS = 6
+
 # Jina Embeddings API for the policy vector store. Replaces the old local
 # sentence-transformers model — no more PyTorch dependency.
 JINA_API_KEY = os.getenv("JINA_EMBED_MODEL", "")
