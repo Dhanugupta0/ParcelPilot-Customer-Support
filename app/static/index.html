@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ParcelPilot Support</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ============ sign in ============ -->
+<section class="screen on" id="s-login">
+  <div class="login">
+    <div class="mark">◈</div>
+    <h1>ParcelPilot</h1>
+    <p class="sub">Support Intelligence</p>
+    <p class="snap" id="loginSnap">connecting…</p>
+
+    <div class="step on" id="step-role">
+      <div class="cards">
+        <button class="card" data-portal="customer">
+          <b>I'm a customer</b>
+          <span>Ask about your orders, your agreement or a support ticket.</span>
+        </button>
+        <button class="card" data-portal="staff">
+          <b>I work here</b>
+          <span>Every account, the SLA board, and every answer the assistant gave.</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="step" id="step-who">
+      <button class="back" id="backRole">← back</button>
+      <div id="whoList"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============ customer ============ -->
+<section class="screen" id="s-cust">
+  <header class="bar">
+    <div class="brand"><span class="mark sm">◈</span><b>ParcelPilot</b> Support</div>
+    <div class="right">
+      <button class="ghost" id="custHome" hidden>← my issues</button>
+      <span class="who" id="custWho"></span>
+      <button class="ghost" data-out>Sign out</button>
+    </div>
+  </header>
+
+  <div class="pane on" id="cust-pick">
+    <div class="col">
+      <h2 id="custHi">What do you need help with?</h2>
+      <p class="lede">Pick the order or ticket this is about and I'll have the details
+        in front of me — you won't need to explain the reference.</p>
+      <div id="issues"></div>
+    </div>
+  </div>
+
+  <div class="pane split-chat" id="cust-chat">
+    <div class="chat">
+      <div class="msgs" id="custMsgs"></div>
+      <div class="chips" id="custChips"></div>
+      <form class="composer" id="custForm">
+        <input id="custIn" autocomplete="off" placeholder="Ask about this…"/>
+        <button>Send</button>
+      </form>
+    </div>
+
+    <!-- What the assistant is doing, in plain language. Named actions, not
+         tool names: a customer should be able to see that the answer was
+         looked up rather than guessed, without being handed our vocabulary. -->
+    <aside class="activity">
+      <div class="ah">
+        <b>What I'm doing</b>
+        <span>each step is a real lookup, not a guess</span>
+      </div>
+      <div id="custActivity" class="alist"></div>
+      <div class="ahelp">
+        <p>Not what you needed?</p>
+        <button class="escalate" id="custEscalate">Talk to a support agent</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+
+<!-- ============ employee ============ -->
+<section class="screen" id="s-staff">
+  <header class="bar">
+    <div class="brand"><span class="mark sm">◈</span><b>ParcelPilot</b> Support Console</div>
+    <div class="right">
+      <span class="who" id="staffWho"></span>
+      <span class="pill" id="staffSnap"></span>
+      <button class="ghost" data-out>Sign out</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab on" data-view="board">SLA Board</button>
+    <button class="tab" data-view="ask">Assistant</button>
+    <button class="tab" data-view="review">Conversations</button>
+    <button class="tab" data-view="policy">Policy Search</button>
+  </nav>
+
+  <div class="pane on" id="v-board"><div class="col wide">
+    <div class="stats" id="boardStats"></div>
+    <h3 class="sec">Breaching now</h3>
+    <div id="breached"></div>
+    <h3 class="sec">Within target</h3>
+    <div id="within"></div>
+    <h3 class="sec">Service credits the engine has already calculated</h3>
+    <div id="credits"></div>
+  </div></div>
+
+  <div class="pane" id="v-ask">
+    <div class="chat wide">
+      <div class="msgs" id="staffMsgs"></div>
+      <div class="chips" id="staffChips"></div>
+      <form class="composer" id="staffForm">
+        <input id="staffIn" autocomplete="off" placeholder="Ask about an order, a ticket, a policy…"/>
+        <button>Send</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="pane" id="v-review"><div class="col wide">
+    <p class="lede">Every conversation the assistant has had, with the working behind
+      each answer: the rule chain, the clause at each step, and the passages it cited.</p>
+    <div class="seg" id="reviewScope">
+      <button data-scope="customers" class="on">Customer chats</button>
+      <button data-scope="mine">Mine</button>
+      <button data-scope="all">Everything</button>
+    </div>
+    <div class="split">
+      <div id="chatList"></div>
+      <div id="chatDetail" class="detail"></div>
+    </div>
+  </div></div>
+
+  <div class="pane" id="v-policy"><div class="col wide">
+    <p class="lede">The policy vector store, searchable directly. Results are ordered by
+      authority first — a signed agreement outranks the SOP even when the SOP is the
+      closer textual match — and anything filtered out is listed with the reason.</p>
+    <form class="composer flat" id="polForm">
+      <input id="polIn" placeholder="e.g. what happens if a pickup is missed?"/>
+      <button>Search</button>
+    </form>
+    <div id="polResults"></div>
+  </div></div>
+</section>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

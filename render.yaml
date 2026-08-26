@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: parcelpilot-support
+    runtime: docker
+    plan: starter          # no longer needs torch; lightweight image
+    healthCheckPath: /api/health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false        # set in the dashboard, never committed
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_REASONING_EFFORT
+        value: medium
+      - key: JINA_EMBED_MODEL
+        sync: false        # Jina API key, set in the dashboard
+

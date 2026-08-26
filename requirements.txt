@@ -1,0 +1,9 @@
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-dotenv>=1.0
+openai>=1.40              # client for Groq's OpenAI-compatible endpoint
+openpyxl>=3.1             # reads the workbook into SQLite
+PyMuPDF>=1.24             # reads the policy PDFs
+numpy>=1.26
+requests>=2.31             # Jina Embeddings API calls
+pytest>=8.0

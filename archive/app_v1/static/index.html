@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>ParcelPilot Support Intelligence</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<!-- ==================================================================== -->
+<!-- SCREEN 1 — sign in. Pick a portal, then pick who you are.            -->
+<!-- ==================================================================== -->
+<section class="screen active" id="screen-login">
+  <div class="login-box">
+    <div class="login-brand">
+      <span class="logo">◈</span>
+      <h1>ParcelPilot</h1>
+      <p class="tagline">Support Intelligence</p>
+      <p class="snapshot" id="loginSnapshot">connecting…</p>
+    </div>
+
+    <!-- step 1: which portal -->
+    <div class="login-step active" id="step-portal">
+      <p class="step-label">How would you like to sign in?</p>
+      <div class="portal-cards">
+        <button class="portal-card" data-portal="customer">
+          <span class="pc-icon">👤</span>
+          <span class="pc-title">Customer</span>
+          <span class="pc-desc">Ask about your own orders, contract and support tickets.</span>
+          <span class="pc-go">Continue →</span>
+        </button>
+        <button class="portal-card staff" data-portal="staff">
+          <span class="pc-icon">🛠</span>
+          <span class="pc-title">Employee</span>
+          <span class="pc-desc">Full access — every account, the Signal Board, outreach and the audit log.</span>
+          <span class="pc-go">Continue →</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- step 2: which identity -->
+    <div class="login-step" id="step-identity">
+      <button class="back-link" id="backToPortal">← Back</button>
+      <p class="step-label" id="identityLabel">Choose an account</p>
+      <div class="identity-list" id="identityList"></div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ==================================================================== -->
+<!-- SCREEN 2 — customer portal. One thing only: the assistant.           -->
+<!-- ==================================================================== -->
+<section class="screen" id="screen-customer">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo sm">◈</span>
+      <div>
+        <h1>ParcelPilot <span>Support</span></h1>
+        <p class="snapshot" id="custSnapshot"></p>
+      </div>
+    </div>
+    <div class="session">
+      <button class="signout" id="custBack" style="display:none">← My issues</button>
+      <span class="who" id="custWho"></span>
+      <span class="scope-badge customer" id="custScope"></span>
+      <button class="signout" data-signout>Sign out</button>
+    </div>
+  </header>
+
+  <main class="single">
+    <!-- Step 1: what is this about? Answering it once, by clicking, saves the
+         customer explaining it in prose and gives the agent a subject. -->
+    <div class="view active" id="cust-picker">
+      <div class="picker-wrap">
+        <div class="picker">
+          <h2 id="pickerHi">What do you need help with?</h2>
+          <p class="psub">Pick the order or ticket this is about and I will have the
+            details in front of me. You can also just start typing.</p>
+          <div id="pickerGroups"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: the conversation itself. -->
+    <div class="view" id="cust-chat">
+      <div class="chat-pane narrow">
+        <div class="messages" id="custMessages"></div>
+        <div class="suggestions" id="custSuggestions"></div>
+        <div class="composer">
+          <textarea id="custInput" rows="1"
+            placeholder="Ask about an order, a cancellation, a credit…"></textarea>
+          <button class="send" id="custSend">Send</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+
+<!-- ==================================================================== -->
+<!-- SCREEN 3 — employee portal. Assistant + the three internal views.    -->
+<!-- ==================================================================== -->
+<section class="screen" id="screen-staff">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo sm">◈</span>
+      <div>
+        <h1>ParcelPilot <span>Support Intelligence</span></h1>
+        <p class="snapshot" id="staffSnapshot"></p>
+      </div>
+    </div>
+    <div class="session">
+      <span class="who" id="staffWho"></span>
+      <span class="scope-badge" id="staffScope"></span>
+      <button class="signout" data-signout>Sign out</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-view="chat">Assistant</button>
+    <button class="tab" data-view="signals">Signal Board</button>
+    <button class="tab" data-view="outreach">Outreach</button>
+    <button class="tab" data-view="conversations">Conversations</button>
+    <button class="tab" data-view="escalations">Escalations</button>
+    <button class="tab" data-view="audit">Audit Log</button>
+  </nav>
+
+  <main>
+    <section class="view active" id="view-chat">
+      <div class="chat-pane">
+        <div class="messages" id="staffMessages"></div>
+        <div class="suggestions" id="staffSuggestions"></div>
+        <div class="composer">
+          <textarea id="staffInput" rows="1"
+            placeholder="Ask about an order, a policy, an SLA…"></textarea>
+          <button class="send" id="staffSend">Send</button>
+        </div>
+      </div>
+
+      <aside class="trace-pane">
+        <div class="trace-header">
+          <h2>Tool trace</h2>
+          <span class="hint">every call the agent makes, live</span>
+        </div>
+        <div id="trace" class="trace"></div>
+      </aside>
+    </section>
+
+    <section class="view" id="view-signals">
+      <div class="signals-wrap"><div class="signals-inner">
+        <p class="view-note">Five detectors run over every open ticket and order at the
+          dataset snapshot. Nobody has to ask a question for these to appear.</p>
+        <div class="stats" id="signalStats"></div>
+        <div id="signalList"></div>
+      </div></div>
+    </section>
+
+    <section class="view" id="view-outreach">
+      <div class="signals-wrap"><div class="signals-inner">
+        <p class="view-note">Customers worth contacting before they complain.
+          Nothing sends until you confirm each message individually.</p>
+        <div class="stats" id="outreachStats"></div>
+        <div class="outreach-bar">
+          <span class="bar-hint">Preparing a batch still requires confirming each one.</span>
+          <button id="proposeAll" class="confirm">Prepare all for approval</button>
+        </div>
+        <div id="draftList"></div>
+        <h3 class="sup-head" id="supHead" style="display:none">Deliberately not contacted</h3>
+        <div id="suppressedList"></div>
+      </div></div>
+    </section>
+
+    <section class="view" id="view-conversations">
+      <div class="signals-wrap"><div class="signals-inner" style="height:100%">
+        <p class="view-note">Every conversation the assistant has had. Open one to see
+          the answer it gave and the evidence behind it — the tools it called, the
+          arguments it used, the documents it cited and the confidence it derived.</p>
+        <div class="convo-search">
+          <input id="convoSearch" type="search"
+            placeholder="Search past conversations by meaning, e.g. “uploads keep breaking”"/>
+        </div>
+        <div class="seg" id="convoScope">
+          <button data-scope="customers" class="on">Customer chats</button>
+          <button data-scope="mine">My chats</button>
+          <button data-scope="all">Everything</button>
+        </div>
+        <div class="review">
+          <div class="review-list" id="convoList"></div>
+          <div class="review-detail" id="convoDetail"></div>
+        </div>
+      </div></div>
+    </section>
+
+    <section class="view" id="view-escalations">
+      <div class="signals-wrap"><div class="signals-inner">
+        <p class="view-note">Escalations raised through the assistant. A proposal is
+          not an escalation until a human confirms it, so both states are shown —
+          what is waiting on someone, and what is already live.</p>
+        <div class="stats" id="escStats"></div>
+        <div id="escList"></div>
+      </div></div>
+    </section>
+
+    <section class="view" id="view-audit">
+      <div class="signals-wrap"><div class="signals-inner">
+        <p class="view-note">Append-only record of every tool call, proposal,
+          confirmation and access denial in this deployment.</p>
+        <div id="auditList"></div>
+      </div></div>
+    </section>
+  </main>
+</section>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

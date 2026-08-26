@@ -1,0 +1,549 @@
+/* ParcelPilot Support Intelligence — one stylesheet, three screens.
+   Motion is used only to explain a change of place (screen, step, new card).
+   Everything here is disabled under prefers-reduced-motion at the bottom. */
+
+:root{
+  /* Declare the page's own scheme. Without this, Chrome's Auto Dark Mode
+     force-inverts a light-only design for anyone whose OS is in dark mode --
+     which produces the muddy half-dark result this palette was written to
+     avoid, and which no amount of CSS colour work fixes. */
+  color-scheme:light;
+
+  /* Light workspace. A support console is read for hours at a time against
+     office lighting; the previous dark palette was chosen for a demo screenshot
+     and fought the density of the internal views. */
+  --bg:#f5f7fa; --bg-2:#eef1f6; --panel:#ffffff; --panel-2:#f3f5f9;
+  --line:#e0e5ec; --line-2:#cdd5e0;
+  --text:#151b23; --muted:#586474; --dim:#8b96a5;
+  --accent:#2563eb; --accent-2:#1d4ed8; --accent-dim:#bfd2f7; --accent-wash:#eff5ff;
+  --ok:#137a3b; --ok-wash:#e9f7ee;
+  --warn:#a35a07; --warn-wash:#fdf3e4;
+  --crit:#c62828; --crit-wash:#fdecec;
+  --purple:#6d3fd4; --purple-wash:#f2ecfd;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;
+  --ease:cubic-bezier(.22,.7,.28,1);
+  --content:1180px;
+  --shadow:0 1px 2px rgba(20,30,45,.06),0 4px 12px -6px rgba(20,30,45,.10);
+  --shadow-lg:0 2px 6px rgba(20,30,45,.07),0 16px 34px -18px rgba(20,30,45,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;
+  height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+/* ============================ screens ============================ */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;
+  opacity:0;visibility:hidden;pointer-events:none;transform:translateY(12px) scale(.994);
+  transition:opacity .4s var(--ease),transform .4s var(--ease),visibility 0s .4s}
+.screen.active{opacity:1;visibility:visible;pointer-events:auto;transform:none;
+  transition:opacity .4s var(--ease),transform .4s var(--ease),visibility 0s}
+
+/* ============================ sign in ============================ */
+#screen-login{align-items:center;justify-content:center;
+  background:radial-gradient(1100px 620px at 50% -14%,rgba(37,99,235,.07),transparent 60%),
+             var(--bg-2)}
+.login-box{width:min(720px,92vw);text-align:center}
+.login-brand{margin-bottom:34px;animation:fadeUp .6s var(--ease) both}
+.login-brand .logo{font-size:44px;color:var(--accent);display:block;line-height:1;
+  filter:drop-shadow(0 6px 14px rgba(37,99,235,.28));animation:float 5s ease-in-out infinite}
+.login-brand h1{font-size:31px;font-weight:650;letter-spacing:-.7px;margin-top:14px}
+.tagline{color:var(--muted);font-size:14px;margin-top:3px;letter-spacing:.2px}
+.snapshot{font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:9px}
+
+.login-step{display:none}
+.login-step.active{display:block;animation:stepIn .42s var(--ease) both}
+.step-label{color:var(--muted);font-size:13px;margin-bottom:16px;letter-spacing:.2px}
+
+.portal-cards{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.portal-card{display:flex;flex-direction:column;align-items:flex-start;gap:7px;
+  background:var(--panel);border:1px solid var(--line);border-radius:15px;
+  padding:24px 22px 20px;text-align:left;cursor:pointer;color:var(--text);
+  font-family:var(--sans);position:relative;overflow:hidden;
+  transition:transform .28s var(--ease),border-color .28s,box-shadow .28s}
+.portal-card::after{content:'';position:absolute;inset:0;opacity:0;
+  background:radial-gradient(420px 200px at 50% 0,rgba(37,99,235,.07),transparent 70%);
+  transition:opacity .3s;pointer-events:none}
+.portal-card{box-shadow:var(--shadow)}
+.portal-card:hover{transform:translateY(-4px);border-color:var(--accent);
+  box-shadow:var(--shadow-lg)}
+.portal-card:hover::after{opacity:1}
+.portal-card.staff:hover{border-color:var(--purple)}
+.portal-card.staff::after{background:radial-gradient(420px 200px at 50% 0,rgba(109,63,212,.07),transparent 70%)}
+.pc-icon{font-size:25px;line-height:1}
+.pc-title{font-size:17px;font-weight:600;letter-spacing:-.2px}
+.pc-desc{font-size:12.5px;color:var(--muted);line-height:1.55}
+.pc-go{font-size:11.5px;font-family:var(--mono);color:var(--accent);margin-top:8px;
+  transition:transform .28s var(--ease)}
+.portal-card.staff .pc-go{color:var(--purple)}
+.portal-card:hover .pc-go{transform:translateX(4px)}
+
+.identity-list{display:flex;flex-direction:column;gap:8px}
+.identity{display:flex;align-items:center;gap:13px;width:100%;
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;
+  padding:12px 15px;cursor:pointer;color:var(--text);font-family:var(--sans);
+  text-align:left;animation:fadeUp .4s var(--ease) both;
+  transition:transform .2s var(--ease),border-color .2s,background .2s}
+.identity:hover{transform:translateX(4px);border-color:var(--accent-dim);background:var(--panel-2)}
+.avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;
+  background:linear-gradient(140deg,#3b82f6,#6d3fd4);color:#fff;
+  font-weight:600;font-size:14px}
+.imeta{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.iname{font-size:14px;font-weight:500}
+.irole{font-size:11.5px;color:var(--dim);font-family:var(--mono)}
+.igo{color:var(--dim);font-size:15px;transition:transform .2s var(--ease),color .2s}
+.identity:hover .igo{color:var(--accent);transform:translateX(3px)}
+.back-link{background:none;border:none;color:var(--dim);font-size:12.5px;cursor:pointer;
+  font-family:var(--sans);margin-bottom:13px;padding:3px 0;transition:color .2s}
+.back-link:hover{color:var(--text)}
+
+/* ============================ chrome ============================ */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;
+  padding:11px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-shrink:0}
+.brand{display:flex;gap:11px;align-items:center;min-width:0}
+.logo.sm{font-size:23px;color:var(--accent)}
+.topbar h1{font-size:15.5px;font-weight:600;letter-spacing:-.2px;white-space:nowrap}
+.topbar h1 span{color:var(--muted);font-weight:400}
+.topbar .snapshot{margin-top:1px}
+.session{display:flex;gap:10px;align-items:center;flex-shrink:0}
+.who{font-size:13px;color:var(--muted)}
+.scope-badge{font-size:11px;font-family:var(--mono);padding:4px 9px;border-radius:20px;
+  background:var(--accent-wash);color:var(--accent-2);border:1px solid var(--accent-dim);
+  white-space:nowrap}
+.scope-badge.customer{background:var(--purple-wash);color:var(--purple);border-color:#d6c6f7}
+.signout{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);
+  border-radius:7px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:var(--sans);
+  transition:color .2s,border-color .2s}
+.signout:hover{color:var(--text);border-color:var(--dim)}
+
+.tabs{display:flex;gap:2px;padding:0 20px;background:var(--panel);
+  border-bottom:1px solid var(--line);flex-shrink:0}
+.tab{background:none;border:none;color:var(--muted);padding:9px 15px;font-size:13px;
+  cursor:pointer;border-bottom:2px solid transparent;font-family:var(--sans);
+  transition:color .2s,border-color .2s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+main{flex:1;overflow:hidden;position:relative;display:flex}
+main.single{justify-content:center}   /* customer portal: one centred column */
+.view{display:none;height:100%;width:100%}
+.view.active{display:flex;animation:viewIn .34s var(--ease) both}
+
+/* ============================ chat ============================ */
+.chat-pane{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-pane.narrow{max-width:940px;margin:0 auto;width:100%}
+.messages{flex:1;min-height:0;overflow-y:auto;padding:24px 26px;display:flex;flex-direction:column;gap:17px}
+.msg{max-width:min(780px,94%);line-height:1.62;animation:msgIn .34s var(--ease) both}
+.msg.user{align-self:flex-end;background:linear-gradient(140deg,#2f6fe4,#2258c8);
+  padding:10px 14px;border-radius:13px 13px 4px 13px;white-space:pre-wrap;color:#f1f7ff}
+.msg.bot{align-self:flex-start;width:100%}
+.msg.bot .body{background:var(--panel);border:1px solid var(--line);padding:13px 16px;
+  border-radius:13px 13px 13px 4px;transition:color .3s}
+.msg.bot .body.drafting{color:var(--muted)}
+.msg.bot .body p{margin:0 0 9px}
+.msg.bot .body p:last-child{margin-bottom:0}
+.msg.bot .body strong{color:#000}
+.msg.bot .body code{font-family:var(--mono);font-size:12px;background:var(--panel-2);
+  padding:1px 5px;border-radius:4px;color:var(--accent-2)}
+.msg.bot .body ul{margin:6px 0 9px 18px}
+.msg.bot .body li{margin:3px 0}
+.msg.system{align-self:center;font-size:12px;color:var(--dim);font-style:italic;text-align:center}
+
+.caret{display:inline-block;width:7px;height:14px;background:var(--accent);
+  margin-left:2px;vertical-align:-2px;border-radius:1px;animation:caret 1s steps(2) infinite}
+.typing{display:inline-flex;gap:4px;padding:4px 0}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:blink 1.3s infinite}
+.typing i:nth-child(2){animation-delay:.2s}.typing i:nth-child(3){animation-delay:.4s}
+
+/* live tool chips, shown in both portals */
+.steps{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.steps:empty{display:none}
+.step{display:inline-flex;align-items:center;gap:6px;background:var(--panel-2);
+  border:1px solid var(--line);border-radius:20px;padding:4px 11px;font-size:11.5px;
+  color:var(--muted);animation:pop .3s var(--ease) both}
+.step .slabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.1px}
+.step.done{border-color:#b6e0c4;background:var(--ok-wash);color:var(--text)}
+.step.done .stick{color:var(--ok)}
+.step.denied{border-color:#f0c0c0;background:var(--crit-wash);color:var(--crit)}
+.sspin{width:9px;height:9px;border:2px solid var(--accent-dim);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.stick{font-size:11px}
+
+/* trust strip */
+.trust{margin-top:9px;font-size:11.5px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+  animation:fadeUp .3s var(--ease) both}
+.pill{padding:3px 9px;border-radius:20px;font-family:var(--mono);font-size:10.5px;
+  border:1px solid transparent}
+.pill.HIGH{background:var(--ok-wash);color:var(--ok);border-color:#b6e0c4}
+.pill.MEDIUM{background:var(--warn-wash);color:var(--warn);border-color:#f0d9b0}
+.pill.LOW{background:var(--crit-wash);color:var(--crit);border-color:#f0c0c0}
+.pill.src{background:var(--panel-2);color:var(--muted);border-color:var(--line)}
+.trust-why{width:100%;color:var(--dim);font-size:11px;margin-top:3px;line-height:1.5}
+
+/* conflict card */
+.conflict{margin-top:10px;border:1px solid #f0c0c0;background:var(--crit-wash);
+  border-radius:10px;padding:11px 13px;animation:fadeUp .34s var(--ease) both}
+.conflict h4{font-size:11.5px;color:var(--crit);font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px}
+.conflict .row{font-size:12px;margin:5px 0;line-height:1.5}
+.conflict .lbl{font-family:var(--mono);font-size:10px;padding:1px 6px;border-radius:4px;margin-right:6px}
+.conflict .wins{background:#cdeeda;color:var(--ok)}
+.conflict .loses{background:#f7d4d4;color:var(--crit)}
+.conflict .res{margin-top:7px;padding-top:7px;border-top:1px solid #f0c0c0;
+  color:var(--muted);font-size:11.5px}
+
+/* proposal card — the confirmation gate */
+.proposal{margin-top:11px;border:1px solid #f0d9b0;background:var(--warn-wash);
+  border-radius:10px;overflow:hidden;animation:fadeUp .34s var(--ease) both}
+.proposal .ph{background:#fbe9cf;padding:9px 13px;font-size:11.5px;
+  font-family:var(--mono);color:var(--warn);display:flex;justify-content:space-between;
+  gap:10px;align-items:center;text-transform:uppercase;letter-spacing:.5px}
+.proposal .pb{padding:12px 13px}
+.proposal .psum{margin-bottom:9px}
+.proposal .kv{display:grid;grid-template-columns:140px 1fr;gap:5px 10px;font-size:12px}
+.proposal .kv dt{color:var(--dim);font-family:var(--mono);font-size:11px}
+.proposal .preason{margin-top:9px;font-size:11.5px;color:var(--muted)}
+.proposal .warn{margin-top:9px;font-size:11.5px;color:var(--warn);
+  background:#fbe9cf;padding:7px 9px;border-radius:6px}
+.proposal .actions{display:flex;gap:8px;padding:0 13px 12px}
+button.confirm,button.decline{border:none;border-radius:7px;padding:7px 15px;font-size:12.5px;
+  cursor:pointer;font-family:var(--sans);font-weight:500;transition:filter .2s,transform .12s}
+button.confirm{background:var(--ok);color:#07240f}
+button.decline{background:var(--panel-2);color:var(--muted);border:1px solid var(--line)}
+button.confirm:hover,button.decline:hover{filter:brightness(1.12)}
+button.confirm:active,button.decline:active{transform:scale(.97)}
+button.confirm:disabled,button.decline:disabled{opacity:.45;cursor:not-allowed}
+.committed{padding:9px 13px;font-size:12px;color:var(--ok);font-family:var(--mono)}
+.declined{padding:9px 13px;font-size:12px;color:var(--dim);font-family:var(--mono)}
+
+/* composer */
+.composer{display:flex;gap:9px;padding:13px 26px;border-top:1px solid var(--line);
+  background:var(--panel)}
+textarea{flex:1;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
+  color:var(--text);padding:11px 13px;font-family:var(--sans);font-size:13.5px;resize:none;
+  max-height:130px;line-height:1.5;transition:border-color .2s}
+textarea:focus{outline:none;border-color:var(--accent-dim)}
+button.send{background:var(--accent);color:#04182f;border:none;border-radius:9px;padding:0 21px;
+  font-weight:600;cursor:pointer;font-size:13.5px;font-family:var(--sans);
+  transition:filter .2s,transform .12s}
+button.send:hover:not(:disabled){filter:brightness(1.1)}
+button.send:active:not(:disabled){transform:scale(.97)}
+button.send:disabled{opacity:.4;cursor:not-allowed}
+.suggestions{display:flex;gap:7px;flex-wrap:wrap;padding:0 26px 12px}
+.suggestions:empty{display:none}
+.chip{background:var(--panel-2);border:1px solid var(--line);border-radius:16px;
+  padding:5px 12px;font-size:11.5px;color:var(--muted);cursor:pointer;font-family:var(--sans);
+  transition:border-color .2s,color .2s,transform .18s var(--ease)}
+.chip:hover{border-color:var(--accent-dim);color:var(--text);transform:translateY(-2px)}
+
+/* ============================ tool trace ============================ */
+.trace-pane{width:360px;flex-shrink:0;border-left:1px solid var(--line);
+  background:var(--panel);display:flex;flex-direction:column}
+.trace-header{padding:13px 16px;border-bottom:1px solid var(--line)}
+.trace-header h2{font-size:12.5px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted)}
+.trace-header .hint{font-size:11px;color:var(--dim)}
+.trace{flex:1;min-height:0;overflow-y:auto;padding:12px}
+.tcall{border:1px solid var(--line);border-radius:9px;margin-bottom:9px;overflow:hidden;
+  background:var(--panel-2);animation:fadeUp .3s var(--ease) both}
+.tcall .th{padding:8px 11px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.tcall .name{font-family:var(--mono);font-size:11.5px;color:var(--accent)}
+.tcall .cat{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.4px}
+.tcall .spin{width:9px;height:9px;border:2px solid var(--accent-dim);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.tcall .tick{color:var(--ok);font-size:12px}
+.tcall .summary{padding:0 11px 9px;font-size:11.5px;color:var(--muted);line-height:1.5}
+.tcall .args{padding:0 11px 9px;font-family:var(--mono);font-size:10.5px;color:var(--dim);
+  word-break:break-all}
+.tcall.denied{border-color:#f0c0c0}
+.tcall.denied .name{color:var(--crit)}
+.tcall details{padding:0 11px 9px}
+.tcall summary{font-size:10.5px;color:var(--dim);cursor:pointer}
+.tcall pre{margin-top:7px;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;
+  padding:9px;font-family:var(--mono);font-size:10px;max-height:230px;overflow:auto;
+  color:var(--muted);white-space:pre-wrap;word-break:break-word}
+.trace-empty{padding:22px 15px}
+.trace-empty p{color:var(--dim);font-size:11.5px;line-height:1.6;margin-bottom:13px}
+.trace-legend{display:flex;flex-direction:column;gap:7px}
+.tl{display:flex;gap:9px;align-items:flex-start;font-size:11px;line-height:1.45}
+.tl i{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0;background:var(--dim)}
+.tl.doc i{background:var(--accent)} .tl.data i{background:var(--ok)}
+.tl.rule i{background:var(--purple)} .tl.act i{background:var(--warn)}
+.tl.ops i{background:var(--crit)}
+.tl b{display:block;color:var(--muted);font-weight:500;font-family:var(--mono);font-size:10.5px}
+.tl span{color:var(--dim)}
+
+/* The chat opens on an empty column. Say what the thing does and what it will
+   refuse to do, because that restraint IS the product -- then get out of the
+   way. Removed the moment a first message arrives. */
+.chat-empty{margin:auto 0;padding:8px 4px 22px;animation:fadeUp .5s var(--ease) both}
+.chat-empty h2{font-size:19px;font-weight:600;letter-spacing:-.3px;margin-bottom:7px}
+.chat-empty>p{color:var(--muted);font-size:13px;line-height:1.65;max-width:62ch;margin-bottom:18px}
+.ce-points{display:grid;gap:9px;max-width:64ch}
+.cep{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;line-height:1.55;
+  color:var(--muted)}
+.cep b{color:var(--text);font-weight:550}
+.cep i{color:var(--accent);font-style:normal;flex-shrink:0;font-size:13px;line-height:1.4}
+.chat-empty .ce-hint{margin-top:19px;font-size:11.5px;color:var(--dim);font-family:var(--mono)}
+
+/* ============================ signal board ============================ */
+.signals-wrap{flex:1;min-height:0;overflow-y:auto;padding:22px 26px;width:100%}
+.signals-inner{max-width:var(--content);margin:0 auto}
+.view-note{color:var(--muted);font-size:12.5px;margin-bottom:16px;max-width:760px;line-height:1.6}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:20px}
+.stat{background:var(--panel);box-shadow:var(--shadow);border:1px solid var(--line);border-radius:10px;padding:13px 15px;
+  animation:fadeUp .38s var(--ease) both}
+.stat .n{font-size:25px;font-weight:600;letter-spacing:-.5px}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.stat.crit .n{color:var(--crit)}.stat.warn .n{color:var(--warn)}
+.signal{background:var(--panel);box-shadow:var(--shadow);border:1px solid var(--line);border-left-width:3px;
+  border-radius:10px;padding:15px 17px;margin-bottom:11px;animation:fadeUp .38s var(--ease) both}
+.signal.critical{border-left-color:var(--crit)}
+.signal.high{border-left-color:var(--warn)}
+.signal.medium{border-left-color:var(--accent)}
+.signal.low{border-left-color:var(--dim)}
+.signal .sh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.signal h3{font-size:14px;font-weight:600;line-height:1.4}
+.signal .meta{display:flex;gap:6px;flex-shrink:0}
+.signal .why{color:var(--muted);font-size:12.5px;line-height:1.65;margin-top:8px;max-width:88ch}
+.signal .ev{margin-top:12px;border-top:1px solid var(--line);padding-top:11px}
+.evrow{display:grid;grid-template-columns:88px minmax(0,1fr);gap:4px 13px;
+  padding:6px 0;border-bottom:1px solid rgba(36,43,54,.55)}
+.evrow:last-child{border-bottom:none;padding-bottom:0}
+.evrow .eid{font-family:var(--mono);font-size:11px;color:var(--accent);white-space:nowrap;
+  padding-top:1px}
+.evrow .esub{font-size:12.5px;color:var(--text);line-height:1.45;min-width:0;
+  overflow-wrap:anywhere}
+/* Secondary facts sit under the subject in a quieter row rather than competing
+   with it on the same line. */
+.evrow .emeta{grid-column:2;display:flex;flex-wrap:wrap;gap:3px 12px;min-width:0;
+  font-size:10.5px;font-family:var(--mono);color:var(--dim);line-height:1.5}
+/* nowrap kept a short "status open" on one line but let a 200-character triage
+   rationale run straight off the right edge of the card. Values wrap instead;
+   short ones stay on one line anyway because they are short. */
+.evrow .emeta span{max-width:100%;overflow-wrap:anywhere}
+.evrow .emeta .open{color:var(--warn)}
+.signal .srcs{margin-top:9px;font-size:11px;color:var(--dim);font-family:var(--mono)}
+.signal .rec{margin-top:10px;font-size:11.5px;color:var(--warn);background:var(--warn-wash);
+  border:1px solid #f0d9b0;border-radius:7px;padding:8px 10px}
+
+/* ============================ outreach ============================ */
+.outreach-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;
+  margin-bottom:16px;flex-wrap:wrap}
+.bar-hint{font-size:12px;color:var(--dim)}
+.draft{background:var(--panel);box-shadow:var(--shadow);border:1px solid var(--line);border-left:3px solid var(--accent);
+  border-radius:10px;padding:15px 17px;margin-bottom:11px;animation:fadeUp .38s var(--ease) both}
+.draft .dh{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:9px}
+.draft h3{font-size:14px;font-weight:600}
+.draft .who{font-size:11.5px;color:var(--dim);font-family:var(--mono);margin-top:3px}
+.draft .meta{display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap}
+.draft .body{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+  padding:15px 18px;font-size:12.5px;line-height:1.7;white-space:pre-wrap;
+  color:var(--text);max-width:72ch}
+/* Email on the left at a readable measure, the verification beside it; they
+   stack once the CARD is too narrow to carry both. A viewport media query gets
+   this wrong -- the card is bounded by --content, not by the window -- so the
+   breakpoint is a container query on the card itself, with a viewport query
+   kept underneath it for browsers without container support. */
+.draft{container-type:inline-size}
+.dsplit{display:grid;grid-template-columns:minmax(0,72ch) minmax(0,1fr);gap:20px;
+  align-items:start}
+@media(max-width:1080px){ .dsplit{grid-template-columns:minmax(0,1fr)} }
+@container (max-width:900px){ .dsplit{grid-template-columns:minmax(0,1fr)} }
+.dside{display:flex;flex-direction:column;gap:10px;padding-top:2px}
+.draft .facts{font-size:12px;color:var(--muted);
+  border-left:2px solid var(--accent-dim);padding-left:12px}
+.draft .facts.warn-fact{border-left-color:var(--warn);color:var(--warn)}
+.draft .facts b{color:var(--text);font-weight:550;display:block;margin-bottom:5px;
+  font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+.draft .facts ul{margin:0 0 0 15px;display:flex;flex-direction:column;gap:3px}
+.draft .facts li{line-height:1.5}
+.draft .cite{font-size:11px;color:var(--dim);font-family:var(--mono);line-height:1.5}
+.draft .dactions{display:flex;gap:8px;margin-top:11px;align-items:center}
+.draft .credit{background:var(--ok-wash);color:var(--ok);border:1px solid #b6e0c4;
+  padding:3px 9px;border-radius:20px;font-family:var(--mono);font-size:10.5px}
+.draft .verified{background:var(--accent-wash);color:var(--accent-2);border:1px solid var(--accent-dim);
+  padding:3px 9px;border-radius:20px;font-family:var(--mono);font-size:10.5px}
+.sup-head{font-size:12px;text-transform:uppercase;letter-spacing:.7px;color:var(--muted);
+  margin:26px 0 11px}
+.sup{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--dim);
+  border-radius:9px;padding:11px 14px;margin-bottom:8px}
+.sup .st{font-size:13px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.sup .sr{font-size:11.5px;color:var(--warn);font-family:var(--mono)}
+.sup .sd{font-size:12px;color:var(--dim);margin-top:5px;line-height:1.5}
+
+/* ============================ audit ============================ */
+.aentry{font-family:var(--mono);font-size:11.5px;padding:7px 11px;border-bottom:1px solid var(--line);
+  display:grid;grid-template-columns:145px 150px 110px minmax(0,1fr);gap:11px;
+  transition:background .15s}
+.aentry:hover{background:var(--panel)}
+.aentry .ts{color:var(--dim)}
+.aentry .ev{color:var(--accent)}
+.aentry .who{color:var(--muted)}
+/* break-all split words mid-character ("ok=tru / e"). `anywhere` still breaks a
+   long JSON blob, but takes the natural boundary when there is one. */
+.aentry .dt{color:var(--dim);overflow-wrap:anywhere;line-height:1.55}
+.aentry.deny .ev{color:var(--crit)}
+.aentry.commit .ev{color:var(--ok)}
+
+.empty{color:var(--dim);text-align:center;padding:50px;font-size:13px}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#c8d1de;border-radius:5px}
+::-webkit-scrollbar-thumb:hover{background:#adb9c9}
+
+
+/* ==================== customer: what do you need help with? ==================== */
+.picker-wrap{flex:1;min-height:0;overflow-y:auto;width:100%;padding:34px 26px 40px}
+.picker{max-width:760px;margin:0 auto;animation:fadeUp .45s var(--ease) both}
+.picker h2{font-size:23px;font-weight:650;letter-spacing:-.4px}
+.picker .psub{color:var(--muted);font-size:13.5px;margin-top:6px;line-height:1.6}
+.pgroup{margin-top:26px}
+.pgroup h3{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim);
+  margin-bottom:10px;font-weight:600}
+.issue{display:flex;align-items:center;gap:13px;width:100%;text-align:left;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 15px;
+  margin-bottom:8px;font-family:var(--sans);color:var(--text);box-shadow:var(--shadow);
+  transition:transform .18s var(--ease),border-color .18s,box-shadow .18s}
+.issue:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:var(--shadow-lg)}
+.issue .iref{font-family:var(--mono);font-size:11.5px;color:var(--accent-2);
+  background:var(--accent-wash);border:1px solid var(--accent-dim);border-radius:6px;
+  padding:3px 8px;flex-shrink:0}
+.issue .ibody{flex:1;min-width:0}
+.issue .ilabel{font-size:13.5px;line-height:1.45;font-weight:500}
+.issue .imeta{font-size:11.5px;color:var(--dim);font-family:var(--mono);margin-top:3px}
+.issue .idot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex-shrink:0}
+.issue.open .idot{background:var(--warn)}
+.issue .igo{color:var(--dim);flex-shrink:0;transition:transform .18s var(--ease),color .18s}
+.issue:hover .igo{color:var(--accent);transform:translateX(3px)}
+.issue.other{border-style:dashed;box-shadow:none;background:transparent}
+
+/* ==================== conversation history (both portals) ==================== */
+.convo{display:flex;align-items:center;gap:13px;width:100%;text-align:left;cursor:pointer;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 14px;
+  margin-bottom:7px;font-family:var(--sans);color:var(--text);
+  transition:border-color .16s,background .16s}
+.convo:hover{border-color:var(--accent);background:var(--accent-wash)}
+.convo.active{border-color:var(--accent);background:var(--accent-wash)}
+.convo .cbody{flex:1;min-width:0}
+.convo .ctitle{font-size:13px;font-weight:500;line-height:1.45;
+  overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
+  -webkit-line-clamp:2;-webkit-box-orient:vertical}
+.convo .cmeta{font-size:11px;color:var(--dim);font-family:var(--mono);margin-top:4px;
+  display:flex;flex-wrap:wrap;gap:3px 10px}
+.convo .cwho{color:var(--muted)}
+.convo .cscore{color:var(--accent-2);background:var(--accent-wash);border-radius:4px;padding:0 5px}
+.convo .cesc{color:var(--crit);font-weight:600}
+
+.convo-search{display:flex;gap:9px;margin-bottom:14px}
+.convo-search input{flex:1;background:var(--panel);border:1px solid var(--line-2);
+  border-radius:9px;padding:9px 13px;color:var(--text);font-family:var(--sans);
+  font-size:13px;outline:none;transition:border-color .16s,box-shadow .16s}
+.convo-search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-wash)}
+.convo-search .hint{font-size:11px;color:var(--dim);margin-top:7px;line-height:1.5}
+
+.seg{display:inline-flex;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:9px;padding:3px;gap:2px;margin-bottom:14px}
+.seg button{background:none;border:none;padding:6px 13px;border-radius:7px;cursor:pointer;
+  font-family:var(--sans);font-size:12.5px;color:var(--muted);transition:all .16s}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--panel);color:var(--text);box-shadow:var(--shadow);font-weight:500}
+
+/* review: transcript on the left, the evidence for it on the right */
+.review{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:18px;
+  height:100%;min-height:0}
+@media(max-width:1000px){ .review{grid-template-columns:minmax(0,1fr)} }
+.review-list{overflow-y:auto;min-height:0;padding-right:4px}
+.review-detail{overflow-y:auto;min-height:0;background:var(--panel);
+  border:1px solid var(--line);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}
+.rv-head{border-bottom:1px solid var(--line);padding-bottom:13px;margin-bottom:15px}
+.rv-continue{margin-top:11px}
+.rv-head h3{font-size:15.5px;font-weight:600;line-height:1.4}
+.rv-head .rvm{font-size:11.5px;color:var(--dim);font-family:var(--mono);margin-top:5px;
+  display:flex;flex-wrap:wrap;gap:3px 12px}
+.rv-turn{border-left:2px solid var(--line);padding-left:15px;margin-bottom:20px}
+.rv-turn:last-child{margin-bottom:0}
+.rv-q{font-size:13.5px;font-weight:550;line-height:1.5;margin-bottom:9px}
+/* The label names who actually asked. A staff member reviewing their own
+   thread being told "Customer asked" is a small lie that makes the whole pane
+   look untrustworthy. */
+.rv-q::before{content:'Asked';display:block;font-size:10px;font-family:var(--mono);
+  color:var(--dim);text-transform:uppercase;letter-spacing:.5px;font-weight:400;margin-bottom:4px}
+.review-detail.by-customer .rv-q::before{content:'Customer asked'}
+.review-detail.by-staff .rv-q::before{content:'Agent asked'}
+.rv-a{font-size:13px;line-height:1.65;color:var(--muted);background:var(--panel-2);
+  border-radius:9px;padding:12px 14px}
+.rv-a::before{content:'Assistant replied';display:block;font-size:10px;font-family:var(--mono);
+  color:var(--dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.rv-a.withheld{background:var(--crit-wash);border:1px solid #f0c0c0}
+.rv-sec{margin-top:11px}
+.rv-sec>b{display:block;font-size:10px;font-family:var(--mono);color:var(--dim);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.rv-tool{border:1px solid var(--line);border-radius:9px;margin-bottom:7px;overflow:hidden}
+.rv-tool .rt-h{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:8px 11px;background:var(--panel-2)}
+.rv-tool .rt-name{font-family:var(--mono);font-size:11.5px;color:var(--accent-2)}
+.rv-tool .rt-cat{font-size:9.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--dim)}
+.rv-tool .rt-args{font-family:var(--mono);font-size:10.5px;color:var(--muted);
+  padding:8px 11px;overflow-wrap:anywhere;border-top:1px solid var(--line)}
+.rv-tool .rt-sum{font-size:11.5px;color:var(--muted);padding:0 11px 9px}
+.rv-tool details{padding:0 11px 9px}
+.rv-tool summary{font-size:10.5px;color:var(--dim);cursor:pointer}
+.rv-tool pre{margin-top:7px;background:var(--panel-2);border:1px solid var(--line);
+  border-radius:6px;padding:9px;font-size:10.5px;overflow-x:auto;max-height:280px;
+  color:var(--muted);line-height:1.5}
+.rv-cites{display:flex;flex-direction:column;gap:4px}
+.rv-cite{font-family:var(--mono);font-size:11px;color:var(--muted);
+  background:var(--accent-wash);border:1px solid var(--accent-dim);border-radius:6px;
+  padding:5px 9px}
+
+/* ==================== escalations ==================== */
+.esc{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 16px;align-items:start;
+  background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--warn);
+  border-radius:10px;padding:13px 16px;margin-bottom:9px;box-shadow:var(--shadow)}
+.esc.committed{border-left-color:var(--crit)}
+.esc.declined{border-left-color:var(--dim);opacity:.72}
+.esc h4{font-size:13.5px;font-weight:600;line-height:1.4}
+.esc .em{font-size:11.5px;color:var(--dim);font-family:var(--mono);margin-top:5px;
+  display:flex;flex-wrap:wrap;gap:3px 12px}
+.esc .er{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:8px;
+  grid-column:1/-1;max-width:90ch}
+.esc .eb{font-family:var(--mono);font-size:10.5px;padding:3px 9px;border-radius:20px;
+  border:1px solid;white-space:nowrap;align-self:start}
+.esc .eb.proposed{background:var(--warn-wash);color:var(--warn);border-color:#f0d9b0}
+.esc .eb.committed{background:var(--crit-wash);color:var(--crit);border-color:#f0c0c0}
+.esc .eb.declined{background:var(--panel-2);color:var(--dim);border-color:var(--line)}
+.esc .eopen{margin-top:9px;grid-column:1/-1}
+.esc .eopen button{background:none;border:none;color:var(--accent);cursor:pointer;
+  font-family:var(--sans);font-size:12px;padding:0;text-decoration:underline}
+
+/* A sidebar of past threads, shown beside the customer's chat. */
+.hist-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:11px}
+.hist-head h3{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--dim);
+  font-weight:600}
+.newchat{background:var(--accent);border:none;color:#fff;border-radius:8px;
+  padding:7px 13px;font-size:12.5px;cursor:pointer;font-family:var(--sans);font-weight:500;
+  transition:background .16s}
+.newchat:hover{background:var(--accent-2)}
+
+/* ============================ motion ============================ */
+@keyframes fadeUp{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes stepIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes viewIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes msgIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
+@keyframes caret{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+@media(max-width:980px){
+  .trace-pane{display:none}
+  .portal-cards{grid-template-columns:1fr}
+  .aentry{grid-template-columns:1fr;gap:2px}
+  .topbar h1 span{display:none}
+  .who{display:none}
+}
+
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;
+    transition-duration:.001ms!important}
+}
